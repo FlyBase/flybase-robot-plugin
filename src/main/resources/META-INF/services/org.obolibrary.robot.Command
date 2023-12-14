@@ -1,0 +1,1 @@
+org.flybase.robot.RewriteDefinitionCommand
