@@ -80,7 +80,10 @@ public class SubDefinitionRewriter implements IAnnotationRewriter {
         // so that the new definition differs from the one it was copied over (to avoid
         // "duplicate definition" errors).
         if ( m.start() == 0 && m.end() == originalDef.length() && foreignDefAxiom != null ) {
-            foreignDef = foreignDef.substring(0, foreignDef.length() - 1) + " (from " + m.group(1) + ").";
+            if ( foreignDef.endsWith(".") ) {
+                foreignDef = foreignDef.substring(0, foreignDef.length() - 1);
+            }
+            foreignDef += " (from " + m.group(1) + ").";
         }
 
         return factory.getOWLAnnotationAssertionAxiom(Constants.DEFINITION_PROPERTY, c.getIRI(),
