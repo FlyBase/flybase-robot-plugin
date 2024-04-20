@@ -33,6 +33,7 @@ public class BatchAnnotationRewriter {
     private HashSet<OWLAxiom> newAxioms = new HashSet<OWLAxiom>();
     private ArrayList<IAnnotationRewriter> rewriters = new ArrayList<IAnnotationRewriter>();
     private String iriFilter = null;
+    private boolean generate = false;
 
     /**
      * Adds a rewriter to apply on annotation axioms. All rewriters added here will
@@ -53,6 +54,17 @@ public class BatchAnnotationRewriter {
      */
     public void setIRIFilter(String filter) {
         iriFilter = filter;
+    }
+
+    /**
+     * Enables or disables the attempted production of a <em>de novo</em> annotation
+     * if a class does not already have one.
+     * 
+     * @param generate {@code true} to enable, {@code false} to disable. It is
+     *                 disabled by default.
+     */
+    public void setGenerateIfNull(boolean generate) {
+        this.generate = generate;
     }
 
     /**
@@ -104,6 +116,16 @@ public class BatchAnnotationRewriter {
                 if ( newAxiom != null && newAxiom != origAxiom ) {
                     newAxioms.add(newAxiom);
                     oldAxioms.add(origAxiom);
+                    break;
+                }
+            }
+        }
+
+        if ( origAxioms.isEmpty() && generate ) {
+            for ( IAnnotationRewriter generator : rewriters ) {
+                OWLAnnotationAssertionAxiom newAxiom = generator.rewrite(c);
+                if ( newAxiom != null ) {
+                    newAxioms.add(newAxiom);
                     break;
                 }
             }

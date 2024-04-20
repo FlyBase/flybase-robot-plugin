@@ -44,6 +44,7 @@ public class RewriteDefinitionCommand implements Command {
 
         options.addOption("f", "filter-prefix", true, "only rewrite definitions for terms in specified prefix");
         options.addOption("d", "dot-definitions", false, "rewrite DOT definitions");
+        options.addOption("D", "null-definitions", false, "treat null definitions as DOT definitions");
         options.addOption("s", "sub-definitions", false, "rewrite SUB definitions");
         options.addOption(null, "write-to", true, "write new axioms to specified file");
     }
@@ -91,6 +92,9 @@ public class RewriteDefinitionCommand implements Command {
         BatchAnnotationRewriter rewriter = new BatchAnnotationRewriter();
         if ( line.hasOption('d') ) {
             rewriter.addRewriter(new DotDefinitionRewriter(ontology));
+            if ( line.hasOption('D') ) {
+                rewriter.setGenerateIfNull(true);
+            }
         }
         if ( line.hasOption('s') ) {
             rewriter.addRewriter(new SubDefinitionRewriter(ontology));

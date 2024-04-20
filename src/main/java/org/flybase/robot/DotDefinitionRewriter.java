@@ -11,8 +11,11 @@ package org.flybase.robot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import org.semanticweb.owlapi.model.OWLAnnotation;
 import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
@@ -60,6 +63,7 @@ public class DotDefinitionRewriter implements IAnnotationRewriter {
 
     private OWLOntology ontology;
     private OWLDataFactory factory;
+    private Set<OWLAnnotation> defaultAnnotations = new HashSet<OWLAnnotation>();
 
     /**
      * Creates a new instance.
@@ -77,7 +81,18 @@ public class DotDefinitionRewriter implements IAnnotationRewriter {
             return original;
         }
 
-        OWLAnnotationAssertionAxiom newAxiom = null;
+        return generate(c, original.getAnnotations());
+    }
+
+    @Override
+    public OWLAnnotationAssertionAxiom rewrite(OWLClass c) {
+        return generate(c, defaultAnnotations);
+    }
+
+    /*
+     * Common logic to both forms of rewrite.
+     */
+    private OWLAnnotationAssertionAxiom generate(OWLClass c, Set<OWLAnnotation> annotations) {
         OWLClassExpression oce = getDefiningClassExpression(c);
         if ( oce != null ) {
             logger.debug(String.format("Class expression for %s: %s", c.getIRI().toQuotedString(), oce));
@@ -86,13 +101,12 @@ public class DotDefinitionRewriter implements IAnnotationRewriter {
             oce.accept(visitor);
             String definition = visitor.getDefinition();
 
-            newAxiom = factory.getOWLAnnotationAssertionAxiom(Constants.DEFINITION_PROPERTY, c.getIRI(),
-                    factory.getOWLLiteral(definition), original.getAnnotations());
-        } else {
-            logger.debug(String.format("No class expression for %s", c.getIRI().toQuotedString()));
+            return factory.getOWLAnnotationAssertionAxiom(Constants.DEFINITION_PROPERTY, c.getIRI(),
+                    factory.getOWLLiteral(definition), annotations);
         }
 
-        return newAxiom;
+        logger.debug(String.format("No class expression for %s", c.getIRI().toQuotedString()));
+        return null;
     }
 
     /*

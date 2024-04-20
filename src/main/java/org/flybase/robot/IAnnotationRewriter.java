@@ -30,4 +30,15 @@ public interface IAnnotationRewriter {
      *         {@code null}.
      */
     public OWLAnnotationAssertionAxiom rewrite(OWLClass c, OWLAnnotationAssertionAxiom original);
+
+    /**
+     * Generates an annotation value from scratch.
+     * 
+     * @param c The class for which an annotation should be generated.
+     * @return An annotation axiom with the new value, or {@code null} if no
+     *         annotation could be generated.
+     */
+    default public OWLAnnotationAssertionAxiom rewrite(OWLClass c) {
+        return null;
+    }
 }
