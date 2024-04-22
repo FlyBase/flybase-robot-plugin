@@ -10,12 +10,15 @@
 package org.flybase.robot;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.semanticweb.owlapi.model.ClassExpressionType;
+import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAnnotation;
 import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLAxiom;
@@ -44,23 +47,6 @@ import org.slf4j.LoggerFactory;
 public class DotDefinitionRewriter implements IAnnotationRewriter {
 
     private static final Logger logger = LoggerFactory.getLogger(DotDefinitionRewriter.class);
-
-    private static final HashMap<String, String> propLabels = new HashMap<String, String>();
-
-    // Override the default label of some properties to make the generated
-    // definitions more readable
-    static {
-        propLabels.put(Constants.OBO_PREFIX + "BFO_0000050", "is part of");
-        propLabels.put(Constants.OBO_PREFIX + "RO_0002100", "has its soma located in");
-        propLabels.put(Constants.OBO_PREFIX + "RO_0002103", "electrically synapses to");
-        propLabels.put(Constants.OBO_PREFIX + "RO_0002105", "is synapsed via type Ib bouton to");
-        propLabels.put(Constants.OBO_PREFIX + "RO_0002106", "is synapsed via type Is bouton to");
-        propLabels.put(Constants.OBO_PREFIX + "RO_0002107", "is synapsed via type II bouton to");
-        propLabels.put(Constants.OBO_PREFIX + "RO_0002114", "is synapsed via type III bouton to");
-        propLabels.put(Constants.OBO_PREFIX + "RO_0002150", "is connected to");
-        propLabels.put(Constants.OBO_PREFIX + "RO_0002215", "is capable of");
-        propLabels.put(Constants.OBO_PREFIX + "RO_0013009", "sends synaptic output to");
-    }
 
     private OWLOntology ontology;
     private OWLDataFactory factory;
@@ -161,18 +147,6 @@ public class DotDefinitionRewriter implements IAnnotationRewriter {
     }
 
     /*
-     * Get the label of the property. We first try to look up a human-readable
-     * version, then fallback to the real label.
-     */
-    private String getLabel(OWLObjectProperty property) {
-        String label = propLabels.get(property.getIRI().toString());
-        if ( label == null ) {
-            label = getLabel(property, false);
-        }
-        return label;
-    }
-
-    /*
      * A visitor to walk through a class expression and turn it into a
      * human-readable string.
      */
@@ -203,11 +177,14 @@ public class DotDefinitionRewriter implements IAnnotationRewriter {
         public void visit(OWLObjectSomeValuesFrom ce) {
             currentType = ce.getClassExpressionType();
             for ( OWLObjectProperty prop : ce.getObjectPropertiesInSignature() ) {
-                items.add(getLabel(prop));
-            }
-            OWLClassExpression filler = ce.getFiller();
-            if ( !isFlyBaseGene(filler) ) {
-                items.add("some");
+                ObjectProperty op = ObjectProperty.fromIRI(prop.getIRI());
+                if ( op != null ) {
+                    items.add(op.getHumanExpression());
+                } else {
+                    // Use the property's own label and default connecting word
+                    items.add(getLabel(prop, false));
+                    items.add("some");
+                }
             }
             ce.getFiller().accept(this);
         }
@@ -223,9 +200,67 @@ public class DotDefinitionRewriter implements IAnnotationRewriter {
             }
             items.add(getLabel(ce, true));
         }
+    }
+}
 
-        private boolean isFlyBaseGene(OWLClassExpression ce) {
-            return ce.isNamed() && ce.asOWLClass().getIRI().toString().startsWith(Constants.FBGN_PREFIX);
+/**
+ * Represents some object properties for which we override the label, in order
+ * to build sentences that flow somewhat more nicely.
+ */
+enum ObjectProperty {
+    // @formatter:off
+    // PROP ID,  LABEL,                                     CONNECTING WORD
+    BFO_0000050 ("is part of"                                 ),
+    BFO_0000051 ("has part"                                   ),
+    RO_0002100  ("has its soma located in"                    ),
+    RO_0002103  ("electrically synapses to"                   ),
+    RO_0002105  ("is synapsed via type Ib bouton to"          ),
+    RO_0002106  ("is synapsed via type Is bouton to"          ),
+    RO_0002107  ("is synapsed via type II bouton to"          ),
+    RO_0002114  ("is synapsed via type III bouton to"         ),
+    RO_0002150  ("is continuous with"                         ),
+    RO_0002160  ("only exists in",                          ""),
+    RO_0002170  ("is connected to"                            ),
+    RO_0002215  ("is capable of"                              ),
+    RO_0002216  ("is capable of part of"                      ),
+    RO_0002292  ("expresses",                               ""),
+    RO_0013009  ("sends synaptic output to"                   );
+    // @formatter:on
+
+    private final static Map<IRI, ObjectProperty> MAP;
+
+    static {
+        Map<IRI, ObjectProperty> map = new HashMap<IRI, ObjectProperty>();
+        for ( ObjectProperty value : ObjectProperty.values() ) {
+            map.put(IRI.create(Constants.OBO_PREFIX + value.name()), value);
         }
+
+        MAP = Collections.unmodifiableMap(map);
+    }
+
+    private final String label;
+    private final String connector;
+
+    ObjectProperty(String label, String connector) {
+        this.label = label;
+        this.connector = connector;
+    }
+
+    ObjectProperty(String label) {
+        this(label, null);
+    }
+
+    public String getHumanExpression() {
+        if ( connector == null ) {
+            return label + " some";
+        } else if ( !connector.isEmpty() ) {
+            return label + connector;
+        } else {
+            return label;
+        }
+    }
+
+    public static ObjectProperty fromIRI(IRI iri) {
+        return MAP.getOrDefault(iri, null);
     }
 }
