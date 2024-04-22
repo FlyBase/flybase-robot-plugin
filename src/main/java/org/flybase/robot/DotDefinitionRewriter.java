@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.semanticweb.owlapi.model.ClassExpressionType;
 import org.semanticweb.owlapi.model.OWLAnnotation;
 import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLAxiom;
@@ -178,13 +179,15 @@ public class DotDefinitionRewriter implements IAnnotationRewriter {
     private class DefinitionWriterVisitor extends OWLClassExpressionVisitorAdapter {
 
         ArrayList<String> items = new ArrayList<String>();
+        ClassExpressionType currentType;
 
         public String getDefinition() {
-            return "Any " + String.join(" ", items) + ".";
+            return String.join(" ", items) + ".";
         }
 
         @Override
         public void visit(OWLObjectIntersectionOf ce) {
+            currentType = ce.getClassExpressionType();
             List<OWLClassExpression> operands = ce.getOperandsAsList();
             for ( int i = 0; i < operands.size(); i++ ) {
                 operands.get(i).accept(this);
@@ -198,6 +201,7 @@ public class DotDefinitionRewriter implements IAnnotationRewriter {
 
         @Override
         public void visit(OWLObjectSomeValuesFrom ce) {
+            currentType = ce.getClassExpressionType();
             for ( OWLObjectProperty prop : ce.getObjectPropertiesInSignature() ) {
                 items.add(getLabel(prop));
             }
@@ -210,6 +214,13 @@ public class DotDefinitionRewriter implements IAnnotationRewriter {
 
         @Override
         public void visit(OWLClass ce) {
+            if ( currentType == ClassExpressionType.OBJECT_INTERSECTION_OF ) {
+                if ( items.isEmpty() ) {
+                    items.add("Any");
+                } else {
+                    items.add("is a(n)");
+                }
+            }
             items.add(getLabel(ce, true));
         }
 
