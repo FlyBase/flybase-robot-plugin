@@ -34,6 +34,7 @@ public class BatchAnnotationRewriter {
     private ArrayList<IAnnotationRewriter> rewriters = new ArrayList<IAnnotationRewriter>();
     private String iriFilter = null;
     private boolean generate = false;
+    private boolean processObsoletes = false;
 
     /**
      * Adds a rewriter to apply on annotation axioms. All rewriters added here will
@@ -65,6 +66,16 @@ public class BatchAnnotationRewriter {
      */
     public void setGenerateIfNull(boolean generate) {
         this.generate = generate;
+    }
+
+    /**
+     * Enables or disables rewriting of annotations for obsoleted terms.
+     * 
+     * @param include {@code true} to enable, {@code false} to disable. It is
+     *                disabled by default (obsolete terms are ignored).
+     */
+    public void setRewriteForObsoleteTerms(boolean include) {
+        processObsoletes = include;
     }
 
     /**
@@ -106,7 +117,7 @@ public class BatchAnnotationRewriter {
             }
         }
 
-        if ( isObsolete ) {
+        if ( isObsolete && !processObsoletes ) {
             return;
         }
 

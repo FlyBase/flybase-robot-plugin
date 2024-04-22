@@ -43,6 +43,8 @@ public class RewriteDefinitionCommand implements Command {
         options.addOption("o", "output", true, "save ontology to file");
 
         options.addOption("f", "filter-prefix", true, "only rewrite definitions for terms in specified prefix");
+        options.addOption(null, "include-obsolete", false, "do not ignore obsoleted terms");
+
         options.addOption("d", "dot-definitions", false, "rewrite DOT definitions");
         options.addOption("D", "null-definitions", false, "treat null definitions as DOT definitions");
         options.addOption("s", "sub-definitions", false, "rewrite SUB definitions");
@@ -101,6 +103,9 @@ public class RewriteDefinitionCommand implements Command {
         }
         if ( line.hasOption('f') ) {
             rewriter.setIRIFilter(Constants.OBO_PREFIX + line.getOptionValue('f'));
+        }
+        if ( line.hasOption("include-obsolete") ) {
+            rewriter.setRewriteForObsoleteTerms(true);
         }
 
         List<OWLOntologyChange> changes = rewriter.rewrite(ontology, Constants.DEFINITION_PROPERTY);
