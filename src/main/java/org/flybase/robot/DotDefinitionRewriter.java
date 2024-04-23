@@ -196,7 +196,7 @@ public class DotDefinitionRewriter implements IAnnotationRewriter {
                     items.add(op.getHumanExpression());
                 } else {
                     // Use the property's own label and default connecting word
-                    items.add(getLabel(prop, false));
+                    items.add(getLabel(prop, false).replace('_', ' '));
                     items.add("some");
                 }
             }
