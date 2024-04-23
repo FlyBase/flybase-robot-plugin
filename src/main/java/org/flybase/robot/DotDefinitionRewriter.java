@@ -51,6 +51,7 @@ public class DotDefinitionRewriter implements IAnnotationRewriter {
     private OWLOntology ontology;
     private OWLDataFactory factory;
     private Set<OWLAnnotation> defaultAnnotations = new HashSet<OWLAnnotation>();
+    private boolean includeID;
 
     /**
      * Creates a new instance.
@@ -58,8 +59,21 @@ public class DotDefinitionRewriter implements IAnnotationRewriter {
      * @param ontology The ontology the axioms to rewrite belong to.
      */
     public DotDefinitionRewriter(OWLOntology ontology) {
+        this(ontology, true);
+    }
+
+    /**
+     * Creates a new instance that optionally does not insert IDs within
+     * definitions.
+     * 
+     * @param ontology The ontology the axioms to rewrite belong to.
+     * @param withID   If {@code true} (default, term labels are followed by their
+     *                 ID in the generated definitions.
+     */
+    public DotDefinitionRewriter(OWLOntology ontology, boolean withID) {
         this.ontology = ontology;
         factory = ontology.getOWLOntologyManager().getOWLDataFactory();
+        includeID = withID;
     }
 
     @Override
@@ -198,7 +212,7 @@ public class DotDefinitionRewriter implements IAnnotationRewriter {
                     items.add("is a(n)");
                 }
             }
-            items.add(getLabel(ce, true));
+            items.add(getLabel(ce, includeID));
         }
     }
 }

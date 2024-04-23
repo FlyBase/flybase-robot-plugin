@@ -47,6 +47,7 @@ public class RewriteDefinitionCommand implements Command {
 
         options.addOption("d", "dot-definitions", false, "rewrite DOT definitions");
         options.addOption("D", "null-definitions", false, "treat null definitions as DOT definitions");
+        options.addOption(null, "no-ids", false, "do not insert term IDs within generated definitions");
         options.addOption("s", "sub-definitions", false, "rewrite SUB definitions");
         options.addOption(null, "write-to", true, "write new axioms to specified file");
     }
@@ -93,7 +94,7 @@ public class RewriteDefinitionCommand implements Command {
 
         BatchAnnotationRewriter rewriter = new BatchAnnotationRewriter();
         if ( line.hasOption('d') ) {
-            rewriter.addRewriter(new DotDefinitionRewriter(ontology));
+            rewriter.addRewriter(new DotDefinitionRewriter(ontology, !line.hasOption("no-ids")));
             if ( line.hasOption('D') ) {
                 rewriter.setGenerateIfNull(true);
             }
