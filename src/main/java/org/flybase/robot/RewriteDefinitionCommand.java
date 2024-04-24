@@ -48,7 +48,10 @@ public class RewriteDefinitionCommand implements Command {
         options.addOption("d", "dot-definitions", false, "rewrite DOT definitions");
         options.addOption("D", "null-definitions", false, "treat null definitions as DOT definitions");
         options.addOption(null, "no-ids", false, "do not insert term IDs within generated definitions");
+        options.addOption(null, "add-annotation", true, "add specified annotation to newly generated definitions");
+
         options.addOption("s", "sub-definitions", false, "rewrite SUB definitions");
+
         options.addOption(null, "write-to", true, "write new axioms to specified file");
     }
 
@@ -94,16 +97,27 @@ public class RewriteDefinitionCommand implements Command {
 
         BatchAnnotationRewriter rewriter = new BatchAnnotationRewriter();
         if ( line.hasOption('d') ) {
-            rewriter.addRewriter(new DotDefinitionRewriter(ontology, !line.hasOption("no-ids")));
-            if ( line.hasOption('D') ) {
-                rewriter.setGenerateIfNull(true);
+            DotDefinitionRewriter dotRewriter = new DotDefinitionRewriter(ontology, !line.hasOption("no-ids"));
+            if ( line.hasOption("add-annotation") ) {
+                for ( String value : line.getOptionValues("add-annotation") ) {
+                    String[] parts = value.split(" ", 2);
+                    if ( parts.length != 2 ) {
+                        throw new Exception("Invalid value for --add-annotation");
+                    }
+                    dotRewriter.addDefaultAnnotation(ioHelper.createIRI(parts[0]), parts[1]);
+                }
             }
+
+            rewriter.addRewriter(dotRewriter);
         }
         if ( line.hasOption('s') ) {
             rewriter.addRewriter(new SubDefinitionRewriter(ontology));
         }
         if ( line.hasOption('f') ) {
             rewriter.setIRIFilter(Constants.OBO_PREFIX + line.getOptionValue('f'));
+        }
+        if ( line.hasOption('D') ) {
+            rewriter.setGenerateIfNull(true);
         }
         if ( line.hasOption("include-obsolete") ) {
             rewriter.setRewriteForObsoleteTerms(true);
