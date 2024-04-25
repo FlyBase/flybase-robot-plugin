@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.flybase</groupId>
   <artifactId>flybase-robot-plugin</artifactId>
-  <version>0.2.2</version>
+  <version>0.2.3-SNAPSHOT</version>
 
   <name>FlyBase ROBOT plugin</name>
   <description>ROBOT plugin for FlyBase ontologies</description>
@@ -26,7 +26,7 @@
     <connection>scm:git:https://github.com/FlyBase/flybase-robot-plugin.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/FlyBase/flybase-robot-plugin.git</developerConnection>
     <url>https://github.com/FlyBase/flybase-robot-plugin</url>
-    <tag>flybase-robot-plugin-0.2.2</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <issueManagement>
