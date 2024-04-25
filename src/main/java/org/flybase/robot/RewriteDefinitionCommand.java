@@ -17,6 +17,9 @@ import org.obolibrary.robot.Command;
 import org.obolibrary.robot.CommandLineHelper;
 import org.obolibrary.robot.CommandState;
 import org.obolibrary.robot.IOHelper;
+import org.semanticweb.owlapi.model.OWLAnnotation;
+import org.semanticweb.owlapi.model.OWLAnnotationValue;
+import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyChange;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
@@ -48,10 +51,11 @@ public class RewriteDefinitionCommand implements Command {
         options.addOption("d", "dot-definitions", false, "rewrite DOT definitions");
         options.addOption("D", "null-definitions", false, "treat null definitions as DOT definitions");
         options.addOption(null, "no-ids", false, "do not insert term IDs within generated definitions");
-        options.addOption(null, "add-annotation", true, "add specified annotation to newly generated definitions");
 
         options.addOption("s", "sub-definitions", false, "rewrite SUB definitions");
 
+        options.addOption(null, "add-annotation", true, "add specified annotation to generated definitions");
+        options.addOption(null, "add-annotation-iri", true, "add specified annotation to generated definitions");
         options.addOption(null, "write-to", true, "write new axioms to specified file");
     }
 
@@ -94,21 +98,11 @@ public class RewriteDefinitionCommand implements Command {
         IOHelper ioHelper = CommandLineHelper.getIOHelper(line);
         state = CommandLineHelper.updateInputOntology(ioHelper, state, line);
         OWLOntology ontology = state.getOntology();
+        OWLDataFactory factory = ontology.getOWLOntologyManager().getOWLDataFactory();
 
         BatchAnnotationRewriter rewriter = new BatchAnnotationRewriter();
         if ( line.hasOption('d') ) {
-            DotDefinitionRewriter dotRewriter = new DotDefinitionRewriter(ontology, !line.hasOption("no-ids"));
-            if ( line.hasOption("add-annotation") ) {
-                for ( String value : line.getOptionValues("add-annotation") ) {
-                    String[] parts = value.split(" ", 2);
-                    if ( parts.length != 2 ) {
-                        throw new Exception("Invalid value for --add-annotation");
-                    }
-                    dotRewriter.addDefaultAnnotation(ioHelper.createIRI(parts[0]), parts[1]);
-                }
-            }
-
-            rewriter.addRewriter(dotRewriter);
+            rewriter.addRewriter(new DotDefinitionRewriter(ontology, !line.hasOption("no-ids")));
         }
         if ( line.hasOption('s') ) {
             rewriter.addRewriter(new SubDefinitionRewriter(ontology));
@@ -121,6 +115,16 @@ public class RewriteDefinitionCommand implements Command {
         }
         if ( line.hasOption("include-obsolete") ) {
             rewriter.setRewriteForObsoleteTerms(true);
+        }
+        if ( line.hasOption("add-annotation") ) {
+            for ( String value : line.getOptionValues("add-annotation") ) {
+                rewriter.addAnnotation(getAnnotation(factory, ioHelper, value, false));
+            }
+        }
+        if ( line.hasOption("add-annotation-iri") ) {
+            for ( String value : line.getOptionValues("add-annotation-iri") ) {
+                rewriter.addAnnotation(getAnnotation(factory, ioHelper, value, true));
+            }
         }
 
         List<OWLOntologyChange> changes = rewriter.rewrite(ontology, Constants.DEFINITION_PROPERTY);
@@ -141,5 +145,15 @@ public class RewriteDefinitionCommand implements Command {
         CommandLineHelper.maybeSaveOutput(line, ontology);
 
         return state;
+    }
+
+    private OWLAnnotation getAnnotation(OWLDataFactory factory, IOHelper helper, String annot, boolean valueIsIRI)
+            throws Exception {
+        String[] parts = annot.split(" ", 2);
+        if ( parts.length != 2 ) {
+            throw new Exception("Invalid value for --add-annotation(-iri)");
+        }
+        OWLAnnotationValue value = valueIsIRI ? helper.createIRI(parts[1]) : factory.getOWLLiteral(parts[1]);
+        return factory.getOWLAnnotation(factory.getOWLAnnotationProperty(helper.createIRI(parts[0])), value);
     }
 }

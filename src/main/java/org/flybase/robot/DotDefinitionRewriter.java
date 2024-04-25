@@ -76,20 +76,6 @@ public class DotDefinitionRewriter implements IAnnotationRewriter {
         includeID = withID;
     }
 
-    /**
-     * Adds an annotation to add to newly generated definitions. This only applies
-     * to definition generated from scratch, <em>not</em> to re-written definitions
-     * (re-written definitions get the same annotations as the original definition,
-     * if any).
-     * 
-     * @param property The annotation property to use.
-     * @param value    The value of the annotation.
-     */
-    public void addDefaultAnnotation(IRI property, String value) {
-        defaultAnnotations.add(
-                factory.getOWLAnnotation(factory.getOWLAnnotationProperty(property), factory.getOWLLiteral(value)));
-    }
-
     @Override
     public OWLAnnotationAssertionAxiom rewrite(OWLClass c, OWLAnnotationAssertionAxiom original) {
         if ( !original.getValue().isLiteral() || !original.getValue().asLiteral().get().getLiteral().equals(".") ) {
